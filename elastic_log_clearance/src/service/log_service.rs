@@ -1,5 +1,3 @@
-use anyhow::anyhow;
-
 use crate::common::*;
 
 use crate::models::group_log_format::*;
@@ -83,18 +81,22 @@ impl LogService for LogServicePub {
         /* 파라미터로 넘어온 파일의 확장자. */
         let file_extension: &ffi::OsStr = file.extension().ok_or_else(|| {
             anyhow!(
-                "[Error][check_file_by_rules()] Unknown file extension: {:?}",
+                "[Error][is_matching_extension()] Unknown file extension: {:?}",
                 file
             )
         })?;
 
         /* 삭제 예약된 확장자중에 파라미터로 넘어온 파일과 같은 확장자가 있는지 확인해준다. */
         for extension in log_extensions {
-            if **extension == *file_extension {
-                return Ok(true);
-            }
-        }
 
+            let extension_str: &str = extension.as_str();
+            let file_extension_str: &str = file_extension.to_str().ok_or_else(|| anyhow!("[Error][is_matching_extension()] Problem converting 'file_extension_str' data."))?;
+
+            if extension_str == file_extension_str {
+                return Ok(true);
+            } 
+        }
+        
         Ok(false)
     }
 
@@ -154,11 +156,14 @@ impl LogService for LogServicePub {
         file: path::PathBuf,
         log_format_list: &Vec<LogFormat>,
     ) -> Result<bool, anyhow::Error> {
+
         for formatter in log_format_list {
+                    
             if !self.is_matching_extension(&file, formatter.log_extension())? {
                 continue;
             }
 
+            
             if let Some(file_name_str) = file.file_name().and_then(|name| name.to_str()) {
                 /* 파일 이름 접두사 확인 */
                 if !file_name_str.starts_with(formatter.log_format()) {
@@ -170,6 +175,8 @@ impl LogService for LogServicePub {
                     file_write_date,
                     *formatter.log_retention_period(),
                 )?;
+
+                
                 let current_date: NaiveDate = get_current_kor_naivedate();
 
                 if current_date > expiration_date {
@@ -198,11 +205,11 @@ impl LogService for LogServicePub {
         log_formats: &GroupLogFormat,
     ) -> Result<Vec<path::PathBuf>, anyhow::Error> {
         let mut match_list: Vec<path::PathBuf> = Vec::new();
-
+        
         /* 특정 디렉토리 하위에 있는 모든 폴더를 가져와준다. */
-        let mon_file_dir: String = log_formats.group_path().to_string();
-        let watch_file_list: Vec<path::PathBuf> = read_all_files_in_dir(&mon_file_dir)?;
-        let log_format_list: &Vec<LogFormat> = log_formats.log_format_list();
+        let mon_file_dir: String = log_formats.group_path().to_string(); /* 상위 디렉토리 경로 */
+        let watch_file_list: Vec<path::PathBuf> = read_all_files_in_dir(&mon_file_dir)?; /* 해당 디렉토리 하위에 있는 파일 리스트 */
+        let log_format_list: &Vec<LogFormat> = log_formats.log_format_list(); /*  */
 
         /* 특정 디렉토리 하위에 있는 모든 파일을 순회하면서 동작 */
         for file in &watch_file_list {
@@ -238,24 +245,3 @@ impl LogService for LogServicePub {
         Ok(())
     }
 }
-
-// if let Some(file_name) = file.file_name().and_then(|name| name.to_str()) {
-//     info!("filename: {}", file_name);
-// }
-
-// let file_extension = file
-//     .extension()
-//     .and_then(|ext| ext.to_str())
-//     .map(|ext| ext.to_string())
-//     .unwrap();
-
-// info!("file_extension: {}", file_extension);
-
-// for log_format in log_formats.log_format_list() {
-//     // let format: &String = log_format.log_format();
-//     // let retention_period: &usize = log_format.log_retention_period();
-//     // let log_extension: &Vec<String> = log_format.log_extension();
-
-//     //let file_name =
-
-// }

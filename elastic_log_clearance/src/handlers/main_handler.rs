@@ -4,7 +4,6 @@ use crate::service::log_service::*;
 
 use crate::models::group_log_format::*;
 use crate::models::log_configs::*;
-use crate::models::log_format::*;
 
 pub struct MainHandler<L: LogService> {
     log_service: L,
@@ -23,12 +22,14 @@ impl<L: LogService> MainHandler<L> {
         let group_format_list: Vec<GroupLogFormat> =
             self.log_service.classify_log_format(log_configs);
 
+
         /* 디렉토리 경로별로 삭제작업을 진행한다. */
         for format in group_format_list {
             /* 삭제 리스트 반환 */
             let target_file_list: Vec<path::PathBuf> =
                 self.log_service.get_match_log_list(&format)?;
 
+            println!("{:?}", target_file_list);
             /* 삭제 수행 */
         }
 

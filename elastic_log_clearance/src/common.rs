@@ -2,7 +2,7 @@ pub use std::{
     cmp,
     cmp::{Ordering, Reverse},
     collections::{BinaryHeap, HashMap, VecDeque},
-    env, fs,
+    env, ffi, fs,
     fs::File,
     future::Future,
     io::{BufReader, Write},
@@ -11,7 +11,6 @@ pub use std::{
     str::FromStr,
     sync::{Arc, Mutex, MutexGuard},
     thread,
-    ffi,
     time::Duration,
 };
 

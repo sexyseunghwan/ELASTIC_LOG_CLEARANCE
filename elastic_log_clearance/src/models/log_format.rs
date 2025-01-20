@@ -5,6 +5,6 @@ use crate::common::*;
 pub struct LogFormat {
     pub log_path: String,
     pub log_format: String,
-    pub log_retention_period: usize,
+    pub log_retention_period: i64,
     pub log_extension: Vec<String>,
 }

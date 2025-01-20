@@ -26,7 +26,8 @@ impl<L: LogService> MainHandler<L> {
         /* 디렉토리 경로별로 삭제작업을 진행한다. */
         for format in group_format_list {
             /* 삭제 리스트 반환 */
-            let target_list: Vec<String> = self.log_service.get_match_log_list(&format)?;
+            let target_file_list: Vec<path::PathBuf> =
+                self.log_service.get_match_log_list(&format)?;
 
             /* 삭제 수행 */
         }

@@ -211,6 +211,8 @@ impl LogService for LogServicePub {
         let watch_file_list: Vec<path::PathBuf> = read_all_files_in_dir(&mon_file_dir)?; /* 해당 디렉토리 하위에 있는 파일 리스트 */
         let log_format_list: &Vec<LogFormat> = log_formats.log_format_list(); /*  */
 
+        println!("watch_file_list: {:?}", watch_file_list);
+
         /* 특정 디렉토리 하위에 있는 모든 파일을 순회하면서 동작 */
         for file in &watch_file_list {
             let flag: bool = self.check_file_by_rules(file.clone(), log_format_list)?;

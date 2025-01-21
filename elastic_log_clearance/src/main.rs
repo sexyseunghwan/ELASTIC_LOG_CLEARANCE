@@ -1,9 +1,9 @@
 /*
 Author      : Seunghwan Shin
-Create date : 2025-00-00
+Create date : 2025-01-21
 Description : Elasticsearch 로그 저장주기 관리 해주는 프로그램
 
-History     : 2025-01-24 Seunghwan Shin       # [v.1.0.0] first create
+History     : 2025-01-21 Seunghwan Shin       # [v.1.0.0] first create
 */
 
 mod common;
@@ -18,7 +18,7 @@ use utils_module::logger_utils::*;
 mod models;
 
 mod service;
-use service::log_service::*;
+use service::{log_service::*, schedule_service::*};
 
 #[tokio::main]
 async fn main() {
@@ -27,9 +27,12 @@ async fn main() {
     info!("Elasticsearch log clear program start!");
 
     let log_service: LogServicePub = LogServicePub::new();
-    let main_handler: MainHandler<LogServicePub> = MainHandler::new(log_service);
+    let schedule_service: ScheduleServicePub = ScheduleServicePub::new();
+    let main_handler: MainHandler<LogServicePub, ScheduleServicePub> =
+        MainHandler::new(log_service, schedule_service);
 
-    match main_handler.main_task().await {
+    /* 메인 함수 실행 */
+    match main_handler.main_schedule().await {
         Ok(_) => {
             info!("Successfully clear log files.")
         }

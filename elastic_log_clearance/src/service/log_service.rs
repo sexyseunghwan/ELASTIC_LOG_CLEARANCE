@@ -7,7 +7,6 @@ use crate::models::log_format::*;
 use crate::utils_module::io_utils::*;
 use crate::utils_module::time_utils::*;
 
-#[async_trait]
 pub trait LogService {
     fn classify_log_format(&self, log_configs: LogConfigs) -> Vec<GroupLogFormat>;
     fn get_match_log_list(
@@ -36,7 +35,6 @@ pub trait LogService {
 #[derive(Clone, Debug, new)]
 pub struct LogServicePub;
 
-#[async_trait]
 impl LogService for LogServicePub {
     #[doc = "삭제 대상로그를 분류해주는 함수"]
     /// # Arguments
@@ -88,15 +86,14 @@ impl LogService for LogServicePub {
 
         /* 삭제 예약된 확장자중에 파라미터로 넘어온 파일과 같은 확장자가 있는지 확인해준다. */
         for extension in log_extensions {
-
             let extension_str: &str = extension.as_str();
             let file_extension_str: &str = file_extension.to_str().ok_or_else(|| anyhow!("[Error][is_matching_extension()] Problem converting 'file_extension_str' data."))?;
 
             if extension_str == file_extension_str {
                 return Ok(true);
-            } 
+            }
         }
-        
+
         Ok(false)
     }
 
@@ -129,7 +126,7 @@ impl LogService for LogServicePub {
     /// * `retention_period` - 보존기간 정보
     ///
     /// # Returns
-    /// * Vec<GroupLogFormat>
+    /// * Result<NaiveDate, anyhow::Error>
     fn calculate_expiration_date(
         &self,
         file_date: NaiveDate,
@@ -150,33 +147,32 @@ impl LogService for LogServicePub {
     /// * `log_format` - 그룹별 로그 포멧정보
     ///
     /// # Returns
-    /// * Vec<GroupLogFormat>
+    /// * Result<bool, anyhow::Error>
     fn check_file_by_rules(
         &self,
         file: path::PathBuf,
         log_format_list: &Vec<LogFormat>,
     ) -> Result<bool, anyhow::Error> {
-
         for formatter in log_format_list {
-                    
             if !self.is_matching_extension(&file, formatter.log_extension())? {
+                info!("The extension does not match.: {:?}", file);
                 continue;
             }
 
-            
             if let Some(file_name_str) = file.file_name().and_then(|name| name.to_str()) {
                 /* 파일 이름 접두사 확인 */
                 if !file_name_str.starts_with(formatter.log_format()) {
+                    info!("The prefix does not match.: {:?}", file_name_str);
                     continue;
                 }
-
+                
+                /* 로그파일이 보존기간 이내인지 확인 */
                 let file_write_date: NaiveDate = self.extract_date_from_filename(file_name_str)?;
                 let expiration_date: NaiveDate = self.calculate_expiration_date(
                     file_write_date,
                     *formatter.log_retention_period(),
                 )?;
 
-                
                 let current_date: NaiveDate = get_current_kor_naivedate();
 
                 if current_date > expiration_date {
@@ -199,19 +195,17 @@ impl LogService for LogServicePub {
     /// * `log_format` - 그룹별 로그 포멧정보
     ///
     /// # Returns
-    /// * Vec<GroupLogFormat>
+    /// * Result<Vec<path::PathBuf>, anyhow::Error>
     fn get_match_log_list(
         &self,
         log_formats: &GroupLogFormat,
     ) -> Result<Vec<path::PathBuf>, anyhow::Error> {
         let mut match_list: Vec<path::PathBuf> = Vec::new();
-        
+
         /* 특정 디렉토리 하위에 있는 모든 폴더를 가져와준다. */
         let mon_file_dir: String = log_formats.group_path().to_string(); /* 상위 디렉토리 경로 */
         let watch_file_list: Vec<path::PathBuf> = read_all_files_in_dir(&mon_file_dir)?; /* 해당 디렉토리 하위에 있는 파일 리스트 */
-        let log_format_list: &Vec<LogFormat> = log_formats.log_format_list(); /*  */
-
-        println!("watch_file_list: {:?}", watch_file_list);
+        let log_format_list: &Vec<LogFormat> = log_formats.log_format_list();
 
         /* 특정 디렉토리 하위에 있는 모든 파일을 순회하면서 동작 */
         for file in &watch_file_list {
@@ -233,10 +227,11 @@ impl LogService for LogServicePub {
     fn remove_file(&self, file_list: &Vec<path::PathBuf>) -> Result<(), anyhow::Error> {
         for delete_file in file_list {
             if delete_file.exists() {
-                // 파일이 존재하면 제거
+                /* 파일이 존재하면 제거 */
                 fs::remove_file(&delete_file)?;
                 info!("File successfully removed: {:?}", delete_file);
             } else {
+                /* 파일이 존재하지 않으면 에러처리 */
                 error!(
                     "[Error][remove_file()] File does not exist: {:?}",
                     delete_file

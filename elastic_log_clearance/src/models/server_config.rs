@@ -8,6 +8,7 @@ static SERVER_CONFIG: once_lazy<Arc<ServerConfig>> = once_lazy::new(|| initializ
 #[getset(get = "pub")]
 pub struct ServerConfig {
     pub config_file_path: String,
+    pub start_cron: String,
 }
 
 #[doc = "가장 기본적인 server 의 설정파일을 초기화시켜준는 함수"]
@@ -25,13 +26,14 @@ fn initialize_server_config() -> Arc<ServerConfig> {
     Arc::new(server_config)
 }
 
-// #[doc = "server_config 데이터를 전역적으로 쓰기 위한 함수"]
-// pub fn get_server_config() -> Arc<ServerConfig> {
-//     Arc::clone(&SERVER_CONFIG)
-// }
-
-#[doc = "server_config 데이터를 전역적으로 쓰기 위한 함수"]
+#[doc = "server_config 데이터를 전역적으로 쓰기 위한 함수 - config_file_path"]
 pub fn get_config_file_path() -> String {
     let server_config: &once_lazy<Arc<ServerConfig>> = &SERVER_CONFIG;
     server_config.config_file_path().to_string()
+}
+
+#[doc = "server_config 데이터를 전역적으로 쓰기 위한 함수 - start_cron"]
+pub fn get_start_cron() -> String {
+    let server_config: &once_lazy<Arc<ServerConfig>> = &SERVER_CONFIG;
+    server_config.start_cron().to_string()
 }
